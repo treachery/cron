@@ -24,6 +24,9 @@ type Cron struct {
 	parser    Parser
 	nextID    EntryID
 	jobWaiter sync.WaitGroup
+
+	maxRoutines uint
+	jobQueue    chan struct{}
 }
 
 // Job is an interface for submitted cron jobs.
@@ -301,9 +304,17 @@ func (c *Cron) run() {
 
 // startJob runs the given job in a new goroutine.
 func (c *Cron) startJob(j Job) {
+	if c.maxRoutines > 0 {
+		c.jobQueue <- struct{}{}
+	}
 	c.jobWaiter.Add(1)
 	go func() {
-		defer c.jobWaiter.Done()
+		defer func() {
+			c.jobWaiter.Done()
+			if c.maxRoutines > 0 {
+				<-c.jobQueue
+			}
+		}()
 		j.Run()
 	}()
 }

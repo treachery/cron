@@ -700,3 +700,14 @@ func stop(cron *Cron) chan bool {
 func newWithSeconds() *Cron {
 	return New(WithParser(secondParser), WithChain())
 }
+
+func TestWithMaxJobRoutines(t *testing.T) {
+	cron := New(WithSeconds(), WithMaxJobRoutines(1))
+	cron.AddFunc("0-59 * * * * *", func() { fmt.Println("func 1"); time.Sleep(1 * time.Second) })
+	cron.AddFunc("0-59 * * * * *", func() { fmt.Println("func 2"); time.Sleep(1 * time.Second) })
+	cron.Start()
+
+	time.Sleep(10 * time.Second)
+	ctx := cron.Stop()
+	<-ctx.Done()
+}

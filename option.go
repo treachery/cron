@@ -43,3 +43,13 @@ func WithLogger(logger Logger) Option {
 		c.logger = logger
 	}
 }
+
+// WithMaxJobRoutines limit max routines
+func WithMaxJobRoutines(max uint) Option {
+	return func(c *Cron) {
+		c.maxRoutines = max
+		if c.maxRoutines > 0 {
+			c.jobQueue = make(chan struct{}, c.maxRoutines)
+		}
+	}
+}
